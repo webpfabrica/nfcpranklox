@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фото</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .photo-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .photo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            z-index: 1000;
+            transition: background 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-button:hover {
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="photo-container">
+        <img id="photoImage" src="" alt="Фото">
+    </div>
+
+    <script type="module">
+        // Импорт Firebase
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, get } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        // НАСТРОЙКИ - ЗАМЕНИТЕ НА СВОИ ДАННЫЕ
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqVyXx_y1fFfvPWsCRD-lnkM30BhXEW4E",
+            authDomain: "kombat-d704f.firebaseapp.com",
+            databaseURL: "https://kombat-d704f-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "kombat-d704f",
+            storageBucket: "kombat-d704f.firebasestorage.app",
+            messagingSenderId: "113932884724",
+            appId: "1:113932884724:web:371cc44b27767028be9ca1",
+            measurementId: "G-BDH5XYFG3H"
+        };
+
+        const PHOTO_PATH = "5246839646770558143.jpg"; // УКАЖИТЕ ПУТЬ К ФОТО
+        const SOUNDS_FOLDER = "sounds"; // Папка со звуками
+
+        let selectedSoundName = null;
+        let currentAudio = null; // Текущий проигрываемый звук
+        let isPlaying = false; // Флаг воспроизведения
+
+        // Инициализация Firebase
+        let app, database;
+        try {
+            app = initializeApp(firebaseConfig);
+            database = getDatabase(app);
+            console.log("Firebase подключен");
+        } catch (error) {
+            console.error("Ошибка подключения Firebase:", error);
+        }
+
+        // Установка фото
+        document.getElementById('photoImage').src = PHOTO_PATH;
+
+        // Воспроизведение звука при клике на фото
+        document.getElementById('photoImage').addEventListener('click', function() {
+            // Если звук уже играет, игнорируем клик
+            if (isPlaying) {
+                console.log("Звук уже воспроизводится");
+                return;
+            }
+
+            if (selectedSoundName) {
+                // Создаём новый аудио объект
+                currentAudio = new Audio(`${SOUNDS_FOLDER}/${selectedSoundName}`);
+                
+                // Воспроизводим звук
+                isPlaying = true;
+                currentAudio.play().catch(e => {
+                    console.error("Ошибка воспроизведения:", e);
+                    alert("Не удалось воспроизвести звук");
+                    isPlaying = false;
+                });
+
+                // Когда звук закончился
+                currentAudio.addEventListener('ended', function() {
+                    isPlaying = false;
+                    console.log("Звук закончился");
+                });
+            } else {
+                alert("Звук не выбран");
+            }
+        });
+
+        // Загрузка выбранного звука из Firebase
+        async function loadSelectedSound() {
+            try {
+                const snapshot = await get(ref(database, 'selectedSound'));
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    selectedSoundName = data.sound;
+                    console.log("Загружен звук:", data.sound);
+                } else {
+                    console.log('Звук не выбран');
+                }
+            } catch (error) {
+                console.error("Ошибка загрузки:", error);
+            }
+        }
+
+        // Инициализация
+        loadSelectedSound();
+    </script>
+</body>
+</html>
